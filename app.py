@@ -8,7 +8,7 @@ import PyPDF2
 from PIL import Image
 from pathlib import Path
 from openai import OpenAI
-
+import helper
 
 def resetSessionState():
     for key in st.session_state.keys():
@@ -29,27 +29,16 @@ if uploaded_files is not None and len(uploaded_files) > 0:
     st.write("Results:")
     with st.spinner("Loading..."):
         for uploaded_file in uploaded_files:
-            if Path(uploaded_file.name).suffix in [".mp3", ".mp4"]:
+            file_extension = Path(uploaded_file.name).suffix
+            
+            if file_extension in [".mp3", ".mp4"]:
+                result = helper.transcribeSTT(uploaded_file)
 
-                model = whisper.load_model("base")
-
-                with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                    tmp_file.write(uploaded_file.getvalue())
-                    tmp_file_path = tmp_file.name
-
-                transcription = model.transcribe(tmp_file_path)
-                result = transcription['text']
-
-            elif Path(uploaded_file.name).suffix in [".pdf"]:
-                pdf_reader = PyPDF2.PdfReader(uploaded_file)
-                result = ""
-                for page_num in range(len(pdf_reader.pages)):
-                    page = pdf_reader.pages[page_num]
-                    result += page.extract_text()
+            elif file_extension in [".pdf"]:
+              result = helper.pdfToText(uploaded_file)
 
             else:
-                image = Image.open(uploaded_file)
-                result = pytesseract.image_to_string(image)
+                result = helper.ocr(uploaded_file)
 
             with st.expander(f"{uploaded_file.name}"):
                 st.write(result)
