@@ -4,6 +4,7 @@ import os
 import whisper
 import io
 import tempfile
+import PyPDF2
 from PIL import Image
 from pathlib import Path
 from openai import OpenAI
@@ -21,7 +22,7 @@ st.write("Application providing a solution for generating summaries from various
 
 st.divider()
 
-uploaded_files = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg", "mp3", "mp4"], accept_multiple_files=True)
+uploaded_files = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg", "mp3", "mp4", "pdf"], accept_multiple_files=True)
 
 if uploaded_files is not None and len(uploaded_files) > 0:
     resetSessionState()
@@ -38,6 +39,13 @@ if uploaded_files is not None and len(uploaded_files) > 0:
 
                 transcription = model.transcribe(tmp_file_path)
                 result = transcription['text']
+
+            elif Path(uploaded_file.name).suffix in [".pdf"]:
+                pdf_reader = PyPDF2.PdfReader(uploaded_file)
+                result = ""
+                for page_num in range(len(pdf_reader.pages)):
+                    page = pdf_reader.pages[page_num]
+                    result += page.extract_text()
 
             else:
                 image = Image.open(uploaded_file)
