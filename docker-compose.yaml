@@ -1,0 +1,18 @@
+services:
+  streamlit:
+    container_name: streamlit
+    image: streamlit-app:latest
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./app.py:/app/app.py
+    networks:
+      - internal
+
+
+networks:
+  internal:
+    name: internal

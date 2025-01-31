@@ -1,0 +1,7 @@
+pillow
+pytesseract
+python-dotenv
+streamlit
+#streamlit-paste-button
+openai-whisper
+openai
