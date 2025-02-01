@@ -1,20 +1,14 @@
-import pytesseract
 import streamlit as st
 import os
-import whisper
-import io
-import tempfile
-import PyPDF2
-from PIL import Image
 from pathlib import Path
 from openai import OpenAI
-import helper
+from utils import media2text
+
 
 def resetSessionState():
     for key in st.session_state.keys():
         del st.session_state[key]
     st.session_state.processed_data = []
-
 resetSessionState()
 
 st.title("Content Summarizer")
@@ -29,16 +23,7 @@ if uploaded_files is not None and len(uploaded_files) > 0:
     st.write("Results:")
     with st.spinner("Loading..."):
         for uploaded_file in uploaded_files:
-            file_extension = Path(uploaded_file.name).suffix
-            
-            if file_extension in [".mp3", ".mp4"]:
-                result = helper.transcribeSTT(uploaded_file)
-
-            elif file_extension in [".pdf"]:
-              result = helper.pdfToText(uploaded_file)
-
-            else:
-                result = helper.ocr(uploaded_file)
+            result = media2text.extractText(uploaded_file)
 
             with st.expander(f"{uploaded_file.name}"):
                 st.write(result)
