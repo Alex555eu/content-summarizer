@@ -31,10 +31,10 @@ if uploaded_files is not None and len(uploaded_files) > 0:
                 try:
                     result = media2text.extractText(uploaded_file)
                     st.session_state.extracted_data[uploaded_file.name] = result
-                    with st.expander(f"{uploaded_file.name}"):
-                        st.write(result)
                 except AttributeError as err:
                     st.toast(err)
+            with st.expander(f"{uploaded_file.name}"):
+                st.write(result)
 
 
 choices = {'ENG': 'English', 'PL': 'Polski'}
