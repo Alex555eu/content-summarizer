@@ -1,4 +1,5 @@
 import streamlit as st
+import openai
 from utils import media2text, chatreq
 
 
@@ -44,7 +45,14 @@ if st.button("Generate summary", disabled=not st.session_state.extracted_data):
     st.divider()
     with st.spinner("Generating..."):
         request_content = ' '.join(st.session_state.extracted_data.values())
-        stream = chatreq.llmRequest(request_content, selected_response_language)
+        try:
+            stream = chatreq.llmRequest(request_content, selected_response_language)
+        except openai.AuthenticationError:
+            st.toast(body=':red[API Key missing or invalid.]')
+            stream = []
+        except Exception as e:
+            st.toast(body=f':red[{e}]')
+            stream = []
         output = st.empty()
         full_response = ""
         for chunk in stream:
