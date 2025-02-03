@@ -1,97 +1,64 @@
-import pytesseract
 import streamlit as st
-import os
-import whisper
-import io
-import tempfile
-import PyPDF2
-from PIL import Image
-from pathlib import Path
-from openai import OpenAI
+import openai
+from utils import media2text, chatreq
 
 
-def resetSessionState():
-    for key in st.session_state.keys():
-        del st.session_state[key]
-    st.session_state.processed_data = []
+# removes data of files, which no longer exist in current session
+def reduceSessionState(expected_keys):
+    current_keys = list(st.session_state.extracted_data.keys())
+    for key in current_keys:
+        if key not in expected_keys:
+            del st.session_state.extracted_data[key]
 
-resetSessionState()
+if 'extracted_data' not in st.session_state:
+    st.session_state.extracted_data = {}
 
 st.title("Content Summarizer")
 st.write("Application providing a solution for generating summaries from various types of content, including images, audio, and video.")
 
 st.divider()
 
-uploaded_files = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg", "mp3", "mp4", "pdf"], accept_multiple_files=True)
+uploaded_files = st.file_uploader("", type=["png", "jpg", "jpeg", "mp3", "mp4", "pdf"], accept_multiple_files=True)
 
 if uploaded_files is not None and len(uploaded_files) > 0:
-    resetSessionState()
-    st.write("Results:")
+    uploaded_files_names = list(map(lambda x: x.name, uploaded_files))
+    reduceSessionState(uploaded_files_names)
+    st.write("Extracted text:")
     with st.spinner("Loading..."):
         for uploaded_file in uploaded_files:
-            if Path(uploaded_file.name).suffix in [".mp3", ".mp4"]:
-
-                model = whisper.load_model("base")
-
-                with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                    tmp_file.write(uploaded_file.getvalue())
-                    tmp_file_path = tmp_file.name
-
-                transcription = model.transcribe(tmp_file_path)
-                result = transcription['text']
-
-            elif Path(uploaded_file.name).suffix in [".pdf"]:
-                pdf_reader = PyPDF2.PdfReader(uploaded_file)
-                result = ""
-                for page_num in range(len(pdf_reader.pages)):
-                    page = pdf_reader.pages[page_num]
-                    result += page.extract_text()
-
+            if uploaded_file.name in list(st.session_state.extracted_data.keys()):
+                result = st.session_state.extracted_data[uploaded_file.name]
             else:
-                image = Image.open(uploaded_file)
-                result = pytesseract.image_to_string(image)
-
+                try:
+                    result = media2text.extractText(uploaded_file)
+                    st.session_state.extracted_data[uploaded_file.name] = result
+                except AttributeError as err:
+                    st.toast(err)
             with st.expander(f"{uploaded_file.name}"):
                 st.write(result)
 
-            st.session_state.processed_data.append(result)
 
+choices = {'ENG': 'English', 'PL': 'Polski'}
+selected_response_language = st.selectbox("Select summary language", options=list(choices.keys()), format_func=(lambda x: choices[x]))
 
-
-if st.button("Generate summary", disabled=not st.session_state.processed_data):
+if st.button("Generate summary", disabled=not st.session_state.extracted_data):
     st.divider()
     with st.spinner("Generating..."):
-        api_key = os.getenv('OR_API_KEY')
-        client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=f"{api_key}",
-        )
-        stream = client.chat.completions.create(
-            model="meta-llama/llama-3.1-70b-instruct:free",
-            messages=[
-                {
-                    "role": "developer", 
-                    "content": """
-                        Make university grade summary of provided content.
-                        Detect which language is the main one used in the provided content, and make your summary using only that language.
-                    """
-                },
-                {
-                    "role": "user", 
-                    "content": f"{' '.join(st.session_state.processed_data)}"
-                }
-            ],
-            stream=True,
-        )
+        request_content = ' '.join(st.session_state.extracted_data.values())
+        try:
+            stream = chatreq.llmRequest(request_content, selected_response_language)
+        except openai.AuthenticationError:
+            st.toast(body=':red[API Key missing or invalid.]')
+            stream = []
+        except Exception as e:
+            st.toast(body=f':red[{e}]')
+            stream = []
         output = st.empty()
         full_response = ""
         for chunk in stream:
             if chunk.choices[0].delta.content is not None:
                 full_response += chunk.choices[0].delta.content
                 output.markdown(full_response, unsafe_allow_html=True)
-
         st.divider()
-        if st.button("Clear all", icon=":material/delete_sweep:", type="primary"):
+        if st.button("Clear all", key="delete-btn", icon=":material/delete_sweep:", type="primary"):
             output.empty()
-
-
