@@ -14,7 +14,7 @@ if 'extracted_data' not in st.session_state:
     st.session_state.extracted_data = {}
 
 st.title("Content Summarizer")
-st.write("Application providing a solution for generating summaries from various types of content, including images, audio, and video.")
+st.write("Application providing a solution for generating summaries from various types of content including images, audio and video.")
 
 st.divider()
 
@@ -49,6 +49,9 @@ if st.button("Generate summary", disabled=not st.session_state.extracted_data):
             stream = chatreq.llmRequest(request_content, selected_response_language)
         except openai.AuthenticationError:
             st.toast(body=':red[API Key missing or invalid.]')
+            stream = []
+        except openai.APIError:
+            st.toast(body=':red[API provider error. Please retry.]')
             stream = []
         except Exception as e:
             st.toast(body=f':red[{e}]')
