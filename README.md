@@ -29,6 +29,7 @@ If you wish to run the project locally, follow these steps:
 ### Prerequisites
 - [Docker](https://www.docker.com/)
 - File `.env` - added to project directory:
+  
   ```bash
   OR_API_KEY="API key for authentication with the LLM provider"
   BASE_URL="Base URL for the LLM provider's API"
