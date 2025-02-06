@@ -43,10 +43,7 @@ If you wish to run the project locally, follow these steps:
    cd content-summarizer
    ```
 
-2. Create an `.env` file from the template file filled with necessary data:
-   ```
-   cp .env-template .env
-   ```
+2. Create an `.env` filled with necessary data.
 
 3. Build and start the application:
    ```
