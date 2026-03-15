@@ -1,10 +1,5 @@
 # Content Summarizer - AI-Powered Multi-Format Content Summarization Tool
 
-## 🚀Live Demo
-[![APP STATUS](https://img.shields.io/badge/app%20status-up-brightgreen?style=for-the-badge)](https://summarizer-app.almapas.com/)
-
-**Try the application online:** [summarizer-app](https://summarizer-app.almapas.com/)
-
 ## 📖 Overview
 Content Summarizer is an AI-powered application that extracts and summarizes text from various types of content, including PDFs, images, audio, and video files. Leveraging OCR and AI models, it provides quick and efficient summaries, making information more accessible and digestible.
 
